@@ -1,9 +1,15 @@
 from rest_framework import serializers
 
-from .models import Task
+from .models import SignUp,Login
 
 
-class TaskSerializer(serializers.ModelSerializer):
+class SignUpSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Task
+        model = SignUp
+        fields = '__all__'
+
+
+class LoginSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Login
         fields = '__all__'
