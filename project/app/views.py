@@ -1,11 +1,10 @@
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .serializerls import SignUpSerializer, LoginSerializer
-from .models import SignUp, Login
-
-"""
-API Overview
-"""
+from .serializerls import CustomUserSerializer
+from .models import CustomUser
+from django.contrib.auth.hashers import check_password
+from django.core.exceptions import ObjectDoesNotExist
 
 
 @api_view(['GET'])
@@ -19,24 +18,29 @@ def apiOverview(request):
 
 @api_view(['POST'])
 def signUp(request):
-    serializer = SignUpSerializer(data=request.data)
+    serializer = CustomUserSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
-    return Response(serializer.data)
+        return Response(status=status.HTTP_200_OK)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["POST"])
 def login(request):
-    serializer = LoginSerializer(data=request.data)
+    serializer = CustomUserSerializer(data=request.data)
     if serializer.is_valid():
-        user = serializer.data["username"]
         pwd = serializer.data["password"]
+        user = serializer.data["username"]
+        email = serializer.data["email"]
         try:
-            details = SignUp.objects.get(username=user, password=pwd)
-            serializers = SignUpSerializer(details, many=False)
-            return Response(serializers.data)
-        except:
-            error = {
-                "error": "You entered wrong credentials"
-            }
-            return Response(error)
+            details = CustomUser.objects.get(username=user, email=email)
+            serializers = CustomUserSerializer(details, many=False)
+            if check_password(pwd, serializers.data["password"]):
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_401_UNAUTHORIZED)
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
