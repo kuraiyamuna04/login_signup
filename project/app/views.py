@@ -1,10 +1,9 @@
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .serializerls import CustomUserSerializer
-from .models import CustomUser
-from django.contrib.auth.hashers import check_password
-from django.core.exceptions import ObjectDoesNotExist
+from .serializerls import CustomUserSerializer,LoginSerializer
+from .models import *
+from django.contrib.auth import authenticate
 
 
 @api_view(['GET'])
@@ -19,7 +18,7 @@ def apiOverview(request):
 @api_view(['POST'])
 def signUp(request):
     serializer = CustomUserSerializer(data=request.data)
-    if serializer.is_valid():
+    if serializer.is_valid():  # find how we can ignore if and else here.
         serializer.save()
         return Response(status=status.HTTP_200_OK)
     else:
@@ -28,19 +27,17 @@ def signUp(request):
 
 @api_view(["POST"])
 def login(request):
-    serializer = CustomUserSerializer(data=request.data)
-    if serializer.is_valid():
-        pwd = serializer.data["password"]
-        user = serializer.data["username"]
-        email = serializer.data["email"]
-        try:
-            details = CustomUser.objects.get(username=user, email=email)
-            serializers = CustomUserSerializer(details, many=False)
-            if check_password(pwd, serializers.data["password"]):
-                return Response(status=status.HTTP_200_OK)
-            else:
-                return Response(status=status.HTTP_401_UNAUTHORIZED)
-        except ObjectDoesNotExist:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+    serializer = LoginSerializer(data=request.data)
+    pswd = serializer.initial_data["password"]
+    phone = serializer.initial_data["phone_number"]
+    if authenticate(request, phone_number=phone, password=pswd):
+        return Response(status=status.HTTP_200_OK)
     else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['GET'])
+def view(request):
+    modl = CustomUser.objects.all()
+    serializer = CustomUserSerializer(modl, many=True)
+    return Response(serializer.data)

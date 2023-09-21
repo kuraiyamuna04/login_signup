@@ -5,5 +5,6 @@ urlpatterns = [
     path('', views.apiOverview, name='apiOverview'),
     path("sign-up", views.signUp, name="sign-up"),
     path("login", views.login, name="login"),
+    path("view", views.view, name="view"),
 
 ]
