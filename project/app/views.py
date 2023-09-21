@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .serializerls import CustomUserSerializer,LoginSerializer
+from .serializerls import UserSerializer,LoginSerializer
 from .models import *
 from django.contrib.auth import authenticate
 
@@ -17,7 +17,7 @@ def apiOverview(request):
 
 @api_view(['POST'])
 def signUp(request):
-    serializer = CustomUserSerializer(data=request.data)
+    serializer = UserSerializer(data=request.data)
     if serializer.is_valid():  # find how we can ignore if and else here.
         serializer.save()
         return Response(status=status.HTTP_200_OK)
@@ -28,9 +28,9 @@ def signUp(request):
 @api_view(["POST"])
 def login(request):
     serializer = LoginSerializer(data=request.data)
-    pswd = serializer.initial_data["password"]
+    password = serializer.initial_data["password"]
     phone = serializer.initial_data["phone_number"]
-    if authenticate(request, phone_number=phone, password=pswd):
+    if authenticate(request, phone_number=phone, password=password):
         return Response(status=status.HTTP_200_OK)
     else:
         return Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -38,6 +38,6 @@ def login(request):
 
 @api_view(['GET'])
 def view(request):
-    modl = CustomUser.objects.all()
-    serializer = CustomUserSerializer(modl, many=True)
+    users = CustomUser.objects.all()
+    serializer = UserSerializer(users, many=True)
     return Response(serializer.data)

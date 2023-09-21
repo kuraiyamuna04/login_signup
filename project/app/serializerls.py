@@ -1,15 +1,19 @@
 from rest_framework import serializers
 from .models import CustomUser
+from django.contrib.auth.hashers import make_password
 
 
-class CustomUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = '__all__'
+
+    def save(self,**kwargs):
+        self.validated_data["password"] = make_password(self.validated_data["password"])
+        super(UserSerializer, self).save(**kwargs)
 
 
 class LoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ("phone_number", "password")
-
