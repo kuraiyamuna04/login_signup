@@ -45,8 +45,8 @@ class ProfileView(APIView):
 
         if not profile_serializer.is_valid():
             return Response(status=status.HTTP_404_NOT_FOUND)
+        profile_serializer.save()
         return Response(profile_serializer.data)
-
 
 
 class LoginView(APIView):
