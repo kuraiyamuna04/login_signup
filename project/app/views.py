@@ -36,10 +36,6 @@ class ProfileView(APIView):
             serializer = UserProfileSerializer(user)
             return Response(serializer.data)
 
-
-class UpdateProfileView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def put(self, request):
         user = request.user
         serializer = UserSerializer(user)
@@ -47,11 +43,12 @@ class UpdateProfileView(APIView):
         user_profile = UserProfile.objects.get(user_id=user_id)
         profile_serializer = UserProfileSerializer(instance=user_profile, data=request.data)
 
-        if profile_serializer.is_valid():
-            profile_serializer.save()
-            return Response(profile_serializer.data)
-        else:
+        if not profile_serializer.is_valid():
             return Response(status=status.HTTP_404_NOT_FOUND)
+        profile_serializer.is_valid()
+        profile_serializer.save()
+        return Response(profile_serializer.data)
+
 
 
 class LoginView(APIView):
@@ -60,12 +57,11 @@ class LoginView(APIView):
         password = serializer.initial_data["password"]
         phone = serializer.initial_data["phone_number"]
         user = authenticate(request, phone_number=phone, password=password)
-        if user:
-            Refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(Refresh),
-                "access": str(Refresh.access_token)
-            }
-            )
-        else:
+        if not user:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        Refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(Refresh),
+            "access": str(Refresh.access_token)
+        }
+        )
