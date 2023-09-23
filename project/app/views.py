@@ -14,6 +14,7 @@ class RequiredAdmin(BasePermission):
         user = request.user
         serializer = UserSerializer(user)
         user_role = serializer.data["role"]
+        print(user_role)
         try:
             if user_role == 'A':
                 return request.method in SAFE_METHODS
@@ -78,14 +79,14 @@ class LoginView(APIView):
 
 
 class AdminLogin(ListAPIView, CreateAPIView):
-    permission_classes = [IsAuthenticated | RequiredAdmin]
+    permission_classes = [IsAuthenticated,RequiredAdmin]
 
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
 
 
 class AdminProfileUpdate(APIView):
-    permission_classes = [IsAuthenticated | RequiredAdmin]
+    permission_classes = [IsAuthenticated,RequiredAdmin]
 
     def put(self, request,pk):
         user_profile = UserProfile.objects.get(user_id=pk)
