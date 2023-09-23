@@ -6,7 +6,7 @@ urlpatterns = [
     path("usersign-up", views.ProfileSignUpView.as_view(), name="sign-up"),
     path("login", views.LoginView.as_view(), name="login"),
     path("profile", views.ProfileView.as_view(), name="login"),
-    path("login/admin", views.AdminLogin.as_view(), name="admin_login"),
-    path("login/admin/<str:pk>", views.AdminProfileUpdate.as_view(), name="admin_profile_update")
+    path("admin", views.AdminAccessView.as_view(), name="admin_login"),
+    path("updateProfile/<str:pk>", views.UpdateProfileView.as_view(), name="admin_profile_update")
 
 ]
