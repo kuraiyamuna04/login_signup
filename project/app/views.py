@@ -1,12 +1,24 @@
 from rest_framework import status
 from rest_framework.generics import *
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission, SAFE_METHODS
 from rest_framework.response import Response
 from .serializerls import UserSerializer, LoginSerializer, UserProfileSerializer
 from .models import *
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
+
+
+class RequiredAdmin(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        serializer = UserSerializer(user)
+        user_role = serializer.data["role"]
+        try:
+            if user_role == 'A':
+                return request.method in SAFE_METHODS
+        except Exception as e:
+            print(e)
 
 
 class SignUpView(CreateAPIView):
@@ -63,3 +75,23 @@ class LoginView(APIView):
             "access": str(Refresh.access_token)
         }
         )
+
+
+class AdminLogin(ListAPIView, CreateAPIView):
+    permission_classes = [IsAuthenticated | RequiredAdmin]
+
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
+
+
+class AdminProfileUpdate(APIView):
+    permission_classes = [IsAuthenticated | RequiredAdmin]
+
+    def put(self, request,pk):
+        user_profile = UserProfile.objects.get(user_id=pk)
+        profile_serializer = UserProfileSerializer(instance=user_profile, data=request.data)
+
+        if not profile_serializer.is_valid():
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        profile_serializer.save()
+        return Response(profile_serializer.data)

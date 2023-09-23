@@ -21,8 +21,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'app',
     'rest_framework',
-    "rest_framework_simplejwt",
-    'drf_multiple_model'
+    "rest_framework_simplejwt"
 
 ]
 SIMPLE_JWT = {
