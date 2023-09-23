@@ -11,13 +11,10 @@ from rest_framework.views import APIView
 
 class RequiredAdmin(BasePermission):
     def has_permission(self, request, view):
-        user = request.user
-        serializer = UserSerializer(user)
-        user_role = serializer.data["role"]
-        print(user_role)
+        user = request.user.role
         try:
-            if user_role == 'A':
-                return request.method in SAFE_METHODS
+            if str(user) == 'A':
+                return Response({})
         except Exception as e:
             print(e)
 
@@ -36,10 +33,8 @@ class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        serializer = UserSerializer(user)
-        user_role = serializer.data["role"]
-        user_id = serializer.data["id"]
+        user_role = request.user.role
+        user_id = request.user.id
         if user_role == "A":
             user = UserProfile.objects.all()
             serializer = UserProfileSerializer(user, many=True)
@@ -50,9 +45,7 @@ class ProfileView(APIView):
             return Response(serializer.data)
 
     def put(self, request):
-        user = request.user
-        serializer = UserSerializer(user)
-        user_id = serializer.data["id"]
+        user_id = request.user.id
         user_profile = UserProfile.objects.get(user_id=user_id)
         profile_serializer = UserProfileSerializer(instance=user_profile, data=request.data)
 
@@ -78,14 +71,14 @@ class LoginView(APIView):
         )
 
 
-class AdminLogin(ListAPIView, CreateAPIView):
+class AdminAccessView(ListAPIView, CreateAPIView):
     permission_classes = [IsAuthenticated,RequiredAdmin]
 
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
 
 
-class AdminProfileUpdate(APIView):
+class UpdateProfileView(APIView):
     permission_classes = [IsAuthenticated,RequiredAdmin]
 
     def put(self, request,pk):
