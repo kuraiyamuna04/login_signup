@@ -2,9 +2,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.apiOverview,name='apiOverview' ),
-    path("task-list",views.taskList,name="taskview"),
-    path("task-detail/<str:pk>",views.viewone, name="viewone"),
-    path("task-update/<str:pk>", views.update, name="update")
-
+    path("sign-up", views.SignUpView.as_view(), name="sign-up"),
+    path("usersign-up", views.ProfileSignUpView.as_view(), name="sign-up"),
+    path("login", views.LoginView.as_view(), name="login"),
+    path("profile", views.ProfileView.as_view(), name="login")
 ]
