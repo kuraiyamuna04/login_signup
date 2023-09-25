@@ -12,7 +12,7 @@ class CustomUser(AbstractUser):
     username = None
     email = models.EmailField(max_length=200, unique=True)
     phone_number = models.CharField(max_length=20, unique=True)
-    role = models.CharField(max_length=20, choices=ROLES)
+    role = models.CharField(max_length=20, choices=ROLES, default='E')
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = ['email', 'role']
 
@@ -27,7 +27,7 @@ class UserProfile(models.Model):
     first_name = models.CharField(max_length=40)
     last_name = models.CharField(max_length=40)
     address = models.CharField(max_length=50)
-    profile_img = models.ImageField('images/')
+    profile_img = models.ImageField(upload_to='mediafiles/images/')
 
     def __str__(self):
         return self.first_name

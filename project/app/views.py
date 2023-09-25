@@ -11,50 +11,20 @@ from rest_framework.views import APIView
 
 class RequiredAdmin(BasePermission):
     def has_permission(self, request, view):
-        user = request.user.role
         try:
+            user = request.user.role
             if str(user) == 'A':
-                return Response({})
+                return True
         except Exception as e:
             print(e)
 
 
 class RequiredManager(BasePermission):
     def has_permission(self, request, view):
-        user = request.user.role
         try:
+            user = request.user.role
             if str(user) == 'M':
-                return Response({})
-        except Exception as e:
-            print(e)
-
-
-class RequiredEmployee(BasePermission):
-    def has_permission(self, request, view):
-        role = request.POST.get("role")
-        try:
-            if str(role) == 'E':
-                return Response({})
-        except Exception as e:
-            print(e)
-
-
-class AdminCanCreate(BasePermission):
-    def has_permission(self, request, view):
-        role = request.POST.get("role")
-        try:
-            if str(role) == 'M' or str(role) == 'E':
-                return Response({})
-        except Exception as e:
-            print(e)
-
-
-class ManagerCanCreate(BasePermission):
-    def has_permission(self, request, view):
-        role = request.POST.get("role")
-        try:
-            if str(role) == 'E':
-                return Response({})
+                return True
         except Exception as e:
             print(e)
 
@@ -90,7 +60,7 @@ class ProfileView(APIView):
         profile_serializer = UserProfileSerializer(instance=user_profile, data=request.data)
 
         if not profile_serializer.is_valid():
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response({"msg: data you entered is wrong"}, status=status.HTTP_404_NOT_FOUND)
         profile_serializer.save()
         return Response(profile_serializer.data)
 
@@ -100,11 +70,9 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         password = serializer.initial_data["password"]
         phone = serializer.initial_data["phone_number"]
-        print(phone, password)
         user = authenticate(request, phone_number=phone, password=password)
-        print(user)
         if not user:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"msg: wrong Credentials"}, status=status.HTTP_401_UNAUTHORIZED)
         Refresh = RefreshToken.for_user(user)
         return Response({
             'refresh': str(Refresh),
@@ -124,54 +92,58 @@ class UpdateProfileView(APIView):
     permission_classes = [IsAuthenticated, RequiredAdmin]
 
     def put(self, request, pk):
-        user_profile = UserProfile.objects.get(user_id=pk)
-        profile_serializer = UserProfileSerializer(instance=user_profile, data=request.data)
+        try:
+            user_profile = UserProfile.objects.get(user_id=pk)
+            profile_serializer = UserProfileSerializer(instance=user_profile, data=request.data)
 
-        if not profile_serializer.is_valid():
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        profile_serializer.save()
-        return Response(profile_serializer.data)
-
-
-class AdminAddUserView(APIView):
-    permission_classes = [IsAuthenticated, RequiredAdmin, AdminCanCreate]
-
-    def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer.save()
-        email = request.POST.get("email")
-        user = CustomUser.objects.get(email=email)
-        user.is_active = True
-        user.save()
-        return Response(serializer.data)
+            if not profile_serializer.is_valid():
+                return Response({"msg: data you entered is wrong"}, status=status.HTTP_404_NOT_FOUND)
+            profile_serializer.save()
+        except:
+            return Response({
+                "msg": "user with this id does not exists"
+            })
 
 
-class ManagerAddUserView(APIView):
-    permission_classes = [IsAuthenticated, RequiredManager, ManagerCanCreate]
+class AddUserView(APIView):
+    permission_classes = [IsAuthenticated, RequiredAdmin | RequiredManager]
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
         serializer.save()
-        email = request.POST.get("email")
-        user = CustomUser.objects.get(email=email)
-        user.is_active = True
-        user.save()
+        try:
+            email = request.POST.get("email")
+            user = CustomUser.objects.get(email=email)
+            user.is_active = True
+            user.save()
+            return Response(serializer.data)
+        except:
+            return Response({"msg": "user not found"})
+
+
+class AddProfile(APIView):
+    permission_classes = [IsAuthenticated, RequiredAdmin | RequiredManager]
+
+    def post(self, request):
+        user_role = request.user.role
+        if user_role == "M":
+            try:
+                user_id = request.POST.get("user")
+                userprofile_role = CustomUser.objects.get(id=user_id)
+                if userprofile_role == "E":
+                    user = UserProfile.object.all()
+                    serializer = UserProfileSerializer(user)
+                    if not serializer.is_valid():
+                        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    serializer.save()
+                    return Response(serializer.data)
+            except:
+                return Response({"msg": "Incorrect data"})
+        user = UserProfile.object.all()
+        serializer = UserProfileSerializer(user)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
         return Response(serializer.data)
-
-
-class AdminAddProfile(CreateAPIView):
-    permission_classes = [IsAuthenticated, RequiredAdmin]
-
-    queryset = UserProfile.objects.all()
-    serializer_class = UserProfileSerializer
-
-
-class ManagerAddProfile(CreateAPIView):
-    permission_classes = [IsAuthenticated, RequiredManager, RequiredEmployee]
-
-    queryset = UserProfile.objects.all()
-    serializer_class = UserProfileSerializer
