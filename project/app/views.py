@@ -19,6 +19,46 @@ class RequiredAdmin(BasePermission):
             print(e)
 
 
+class RequiredManager(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user.role
+        try:
+            if str(user) == 'M':
+                return Response({})
+        except Exception as e:
+            print(e)
+
+
+class RequiredEmployee(BasePermission):
+    def has_permission(self, request, view):
+        role = request.POST.get("role")
+        try:
+            if str(role) == 'E':
+                return Response({})
+        except Exception as e:
+            print(e)
+
+
+class AdminCanCreate(BasePermission):
+    def has_permission(self, request, view):
+        role = request.POST.get("role")
+        try:
+            if str(role) == 'M' or str(role) == 'E':
+                return Response({})
+        except Exception as e:
+            print(e)
+
+
+class ManagerCanCreate(BasePermission):
+    def has_permission(self, request, view):
+        role = request.POST.get("role")
+        try:
+            if str(role) == 'E':
+                return Response({})
+        except Exception as e:
+            print(e)
+
+
 class SignUpView(CreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
@@ -60,7 +100,9 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         password = serializer.initial_data["password"]
         phone = serializer.initial_data["phone_number"]
+        print(phone, password)
         user = authenticate(request, phone_number=phone, password=password)
+        print(user)
         if not user:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         Refresh = RefreshToken.for_user(user)
@@ -72,16 +114,16 @@ class LoginView(APIView):
 
 
 class AdminAccessView(ListAPIView, CreateAPIView):
-    permission_classes = [IsAuthenticated,RequiredAdmin]
+    permission_classes = [IsAuthenticated, RequiredAdmin]
 
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
 
 
 class UpdateProfileView(APIView):
-    permission_classes = [IsAuthenticated,RequiredAdmin]
+    permission_classes = [IsAuthenticated, RequiredAdmin]
 
-    def put(self, request,pk):
+    def put(self, request, pk):
         user_profile = UserProfile.objects.get(user_id=pk)
         profile_serializer = UserProfileSerializer(instance=user_profile, data=request.data)
 
@@ -89,3 +131,47 @@ class UpdateProfileView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         profile_serializer.save()
         return Response(profile_serializer.data)
+
+
+class AdminAddUserView(APIView):
+    permission_classes = [IsAuthenticated, RequiredAdmin, AdminCanCreate]
+
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer.save()
+        email = request.POST.get("email")
+        user = CustomUser.objects.get(email=email)
+        user.is_active = True
+        user.save()
+        return Response(serializer.data)
+
+
+class ManagerAddUserView(APIView):
+    permission_classes = [IsAuthenticated, RequiredManager, ManagerCanCreate]
+
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer.save()
+        email = request.POST.get("email")
+        user = CustomUser.objects.get(email=email)
+        user.is_active = True
+        user.save()
+        return Response(serializer.data)
+
+
+class AdminAddProfile(CreateAPIView):
+    permission_classes = [IsAuthenticated, RequiredAdmin]
+
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
+
+
+class ManagerAddProfile(CreateAPIView):
+    permission_classes = [IsAuthenticated, RequiredManager, RequiredEmployee]
+
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer

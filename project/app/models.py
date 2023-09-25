@@ -4,8 +4,7 @@ from .managers import CustomManager
 
 ROLES = (("A", "admin"),
          ("M", "manager"),
-         ("E", "employee"),
-         ("U", "user")
+         ("E", "employee")
          )
 
 
