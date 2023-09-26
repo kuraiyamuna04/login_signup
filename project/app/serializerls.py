@@ -1,11 +1,12 @@
 from rest_framework import serializers
-from .models import CustomUser, UserProfile
 from django.contrib.auth.hashers import make_password
+from app.models import CustomUser, UserProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
+        extra_kwargs = {'password': {'write_only': True}}
         fields = '__all__'
 
     def save(self, **kwargs):
@@ -24,3 +25,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = "__all__"
+
+    def save(self,**kwargs):
+        user = self.validated_data["user"]
+        obj = CustomUser.objects.get(id=user.id)
+        self.validated_data["email"] = obj.email
+        self.validated_data["phone_number"] = obj.phone_number
+
+        super(UserProfileSerializer, self).save(**kwargs)

@@ -9,5 +9,5 @@ urlpatterns = [
     path("admin", views.AdminAccessView.as_view(), name="admin_login"),
     path("updateProfile/<str:pk>", views.UpdateProfileView.as_view(), name="admin_profile_update"),
     path("create-user", views.CreateView.as_view(), name="create-user"),
-    path("create-userprofile", views.CreateProfileView.as_view(), name="create-userprofile")
- ]
+    path("create-userprofile", views.ManagerCreateProfileView.as_view(), name="create-userprofile"),
+]

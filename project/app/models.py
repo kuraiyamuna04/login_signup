@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from .managers import CustomManager
+from phonenumber_field.modelfields import PhoneNumberField
 import uuid
 import os
 
@@ -19,7 +20,7 @@ def get_file_path(instance, filename):
 class CustomUser(AbstractUser):
     username = None
     email = models.EmailField(max_length=200, unique=True)
-    phone_number = models.CharField(max_length=20, unique=True)
+    phone_number = PhoneNumberField(null=False, blank=False, unique=True)
     role = models.CharField(max_length=20, choices=ROLES, default='E')
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = ['email', 'role']
@@ -36,6 +37,8 @@ class UserProfile(models.Model):
     last_name = models.CharField(max_length=40)
     address = models.CharField(max_length=50)
     profile_img = models.ImageField(upload_to=get_file_path)
+    email = models.EmailField(default=None)
+    phone_number = PhoneNumberField(default=None)
 
     def __str__(self):
         return self.first_name

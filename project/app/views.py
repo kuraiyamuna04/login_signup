@@ -2,12 +2,14 @@ from rest_framework import status
 from rest_framework.generics import *
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .serializerls import UserSerializer, LoginSerializer, UserProfileSerializer
+from .serializerls import (
+    UserSerializer, LoginSerializer, UserProfileSerializer
+)
 from .models import *
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
-from .decorators import RequiredAdmin, RequiredManager
+from utils.decorators import RequiredAdmin, RequiredManager
 
 
 class SignUpView(CreateAPIView):
@@ -20,20 +22,18 @@ class ProfileSignUpView(CreateAPIView):
     serializer_class = UserProfileSerializer
 
 
-class ProfileView(APIView):
+class ProfileView(ListAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UserProfileSerializer
 
     def get(self, request):
-        user_role = request.user.role
         user_id = request.user.id
-        if user_role == "A":
-            users = UserProfile.objects.all()
-            serializer = UserProfileSerializer(users, many=True)
-            return Response(serializer.data)
-        else:
+        try:
             user = UserProfile.objects.get(user=user_id)
             serializer = UserProfileSerializer(user)
             return Response(serializer.data)
+        except:
+            return Response({"msg:No Data found"}, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request):
         user_id = request.user.id
@@ -100,25 +100,24 @@ class CreateView(APIView):
         return Response(serializer.data)
 
 
-class CreateProfileView(APIView):
-    permission_classes = [IsAuthenticated, RequiredAdmin | RequiredManager]
+class ManagerCreateProfileView(APIView):
+    permission_classes = [IsAuthenticated, RequiredManager]
 
     def post(self, request):
-        user_role = request.user.role
-        if user_role == "M":
-            try:
-                user_id = request.POST.get("user")
-                userprofile_role = CustomUser.objects.get(id=user_id)
-                if userprofile_role == "E":
-                    serializer = UserProfileSerializer(data=request.data)
-                    if not serializer.is_valid():
-                        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                    serializer.save()
-                    return Response(serializer.data)
-            except:
-                return Response({"msg": "Incorrect data"})
-        serializer = UserProfileSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
-        return Response(serializer.data)
+        try:
+            user_id = request.POST.get("user")
+            user = CustomUser.objects.get(id=user_id)
+            userprofile_role = user.role
+            print(userprofile_role)
+            if not userprofile_role == "E":
+                return Response(
+                    {"msg": "You Don't Have Permission For This Access"},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            serializer = UserProfileSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+            return Response({"msg": "Profile created successfully"})
+        except:
+            return Response({"msg": "Incorrect data"}, status=status.HTTP_400_BAD_REQUEST)
