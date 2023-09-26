@@ -1,32 +1,13 @@
 from rest_framework import status
 from rest_framework.generics import *
-from rest_framework.permissions import IsAuthenticated, BasePermission, SAFE_METHODS
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .serializerls import UserSerializer, LoginSerializer, UserProfileSerializer
 from .models import *
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
-
-
-class RequiredAdmin(BasePermission):
-    def has_permission(self, request, view):
-        try:
-            user = request.user.role
-            if str(user) == 'A':
-                return True
-        except Exception as e:
-            print(e)
-
-
-class RequiredManager(BasePermission):
-    def has_permission(self, request, view):
-        try:
-            user = request.user.role
-            if str(user) == 'M':
-                return True
-        except Exception as e:
-            print(e)
+from .decorators import RequiredAdmin, RequiredManager
 
 
 class SignUpView(CreateAPIView):
@@ -46,8 +27,8 @@ class ProfileView(APIView):
         user_role = request.user.role
         user_id = request.user.id
         if user_role == "A":
-            user = UserProfile.objects.all()
-            serializer = UserProfileSerializer(user, many=True)
+            users = UserProfile.objects.all()
+            serializer = UserProfileSerializer(users, many=True)
             return Response(serializer.data)
         else:
             user = UserProfile.objects.get(user=user_id)
@@ -97,12 +78,13 @@ class UpdateProfileView(APIView):
             profile_serializer = UserProfileSerializer(instance=user_profile, data=request.data)
 
             if not profile_serializer.is_valid():
-                return Response({"msg: data you entered is wrong"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"msg: data you entered is wrong"}, status=status.HTTP_400_BAD_REQUEST
+                                )
             profile_serializer.save()
         except:
             return Response({
                 "msg": "user with this id does not exists"
-            })
+            }, status=status.HTTP_404_NOT_FOUND)
 
 
 class AddUserView(APIView):
@@ -113,14 +95,7 @@ class AddUserView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
         serializer.save()
-        try:
-            email = request.POST.get("email")
-            user = CustomUser.objects.get(email=email)
-            user.is_active = True
-            user.save()
-            return Response(serializer.data)
-        except:
-            return Response({"msg": "user not found"})
+        return Response(serializer.data)
 
 
 class AddProfile(APIView):
@@ -133,16 +108,14 @@ class AddProfile(APIView):
                 user_id = request.POST.get("user")
                 userprofile_role = CustomUser.objects.get(id=user_id)
                 if userprofile_role == "E":
-                    user = UserProfile.object.all()
-                    serializer = UserProfileSerializer(user)
+                    serializer = UserProfileSerializer(data=request.data)
                     if not serializer.is_valid():
                         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
                     serializer.save()
                     return Response(serializer.data)
             except:
                 return Response({"msg": "Incorrect data"})
-        user = UserProfile.object.all()
-        serializer = UserProfileSerializer(user)
+        serializer = UserProfileSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()

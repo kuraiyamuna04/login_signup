@@ -10,6 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def save(self, **kwargs):
         self.validated_data["password"] = make_password(self.validated_data["password"])
+        self.validated_data["is_active"] = True
         super(UserSerializer, self).save(**kwargs)
 
 
