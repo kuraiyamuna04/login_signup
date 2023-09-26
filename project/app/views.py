@@ -41,7 +41,8 @@ class ProfileView(APIView):
         profile_serializer = UserProfileSerializer(instance=user_profile, data=request.data)
 
         if not profile_serializer.is_valid():
-            return Response({"msg: data you entered is wrong"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"msg: data you entered is wrong"}, status=status.HTTP_400_BAD_REQUEST
+                            )
         profile_serializer.save()
         return Response(profile_serializer.data)
 
@@ -87,18 +88,19 @@ class UpdateProfileView(APIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
 
-class AddUserView(APIView):
+class CreateView(APIView):
     permission_classes = [IsAuthenticated, RequiredAdmin | RequiredManager]
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                            )
         serializer.save()
         return Response(serializer.data)
 
 
-class AddProfile(APIView):
+class CreateProfileView(APIView):
     permission_classes = [IsAuthenticated, RequiredAdmin | RequiredManager]
 
     def post(self, request):

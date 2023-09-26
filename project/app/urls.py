@@ -8,6 +8,6 @@ urlpatterns = [
     path("profile", views.ProfileView.as_view(), name="profile"),
     path("admin", views.AdminAccessView.as_view(), name="admin_login"),
     path("updateProfile/<str:pk>", views.UpdateProfileView.as_view(), name="admin_profile_update"),
-    path("createuser", views.AddUserView.as_view(), name="admin-create-user"),
-    path("createuserprofile", views.AddProfile.as_view(), name="manager-createuserprofile")
+    path("create-user", views.CreateView.as_view(), name="create-user"),
+    path("create-userprofile", views.CreateProfileView.as_view(), name="create-userprofile")
  ]
