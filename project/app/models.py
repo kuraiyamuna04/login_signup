@@ -1,19 +1,26 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from .managers import CustomManager
+import uuid
+import os
 
 ROLES = (("A", "admin"),
          ("M", "manager"),
-         ("E", "employee"),
-         ("U", "user")
+         ("E", "employee")
          )
+
+
+def get_file_path(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = "%s.%s" % (uuid.uuid4(), ext)
+    return os.path.join('profile-img', filename)
 
 
 class CustomUser(AbstractUser):
     username = None
     email = models.EmailField(max_length=200, unique=True)
     phone_number = models.CharField(max_length=20, unique=True)
-    role = models.CharField(max_length=20, choices=ROLES)
+    role = models.CharField(max_length=20, choices=ROLES, default='E')
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = ['email', 'role']
 
@@ -28,7 +35,7 @@ class UserProfile(models.Model):
     first_name = models.CharField(max_length=40)
     last_name = models.CharField(max_length=40)
     address = models.CharField(max_length=50)
-    profile_img = models.ImageField('images/')
+    profile_img = models.ImageField(upload_to=get_file_path)
 
     def __str__(self):
         return self.first_name
