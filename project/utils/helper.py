@@ -9,5 +9,4 @@ def check_post_req_role(user_id):
     return True
 
 
-class ProfileDoestNotExists(BaseException):
-    pass
+
