@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from app.models import UserProfile
 from .models import TaskModel
 
 

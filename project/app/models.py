@@ -14,7 +14,7 @@ ROLES = (("A", "admin"),
 def get_file_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = "%s.%s" % (uuid.uuid4(), ext)
-    return os.path.join('profile-img', filename)
+    return os.path.join('', filename)
 
 
 class CustomUser(AbstractUser):
@@ -32,13 +32,14 @@ class CustomUser(AbstractUser):
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE,
+        primary_key=True, related_name="userProfiles"
+    )
     first_name = models.CharField(max_length=40)
     last_name = models.CharField(max_length=40)
     address = models.CharField(max_length=50)
     profile_img = models.ImageField(upload_to=get_file_path)
-    email = models.EmailField(default=None)
-    phone_number = PhoneNumberField(default=None)
 
     def __str__(self):
         return self.first_name

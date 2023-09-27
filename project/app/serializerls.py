@@ -22,14 +22,9 @@ class LoginSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(source='user.email', read_only=True)
+    phone_number = serializers.CharField(source="user.phone_number", read_only=True)
+
     class Meta:
         model = UserProfile
         fields = "__all__"
-
-    def save(self,**kwargs):
-        user = self.validated_data["user"]
-        obj = CustomUser.objects.get(id=user.id)
-        self.validated_data["email"] = obj.email
-        self.validated_data["phone_number"] = obj.phone_number
-
-        super(UserProfileSerializer, self).save(**kwargs)

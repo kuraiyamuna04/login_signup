@@ -10,6 +10,7 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from utils.decorators import RequiredAdmin, RequiredManager
+from utils.helper import check_post_req_role
 
 
 class SignUpView(CreateAPIView):
@@ -22,7 +23,7 @@ class ProfileSignUpView(CreateAPIView):
     serializer_class = UserProfileSerializer
 
 
-class ProfileView(ListAPIView):
+class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
 
@@ -32,7 +33,7 @@ class ProfileView(ListAPIView):
             user = UserProfile.objects.get(user=user_id)
             serializer = UserProfileSerializer(user)
             return Response(serializer.data)
-        except:
+        except UserProfile.DoesNotExist:
             return Response({"msg:No Data found"}, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request):
@@ -79,10 +80,11 @@ class UpdateProfileView(APIView):
             profile_serializer = UserProfileSerializer(instance=user_profile, data=request.data)
 
             if not profile_serializer.is_valid():
-                return Response({"msg: data you entered is wrong"}, status=status.HTTP_400_BAD_REQUEST
+                return Response({"msg": "please enter correct data"}, status=status.HTTP_400_BAD_REQUEST
                                 )
             profile_serializer.save()
-        except:
+            return Response({"msg": "Data Updated Successfully"}, status=status.HTTP_200_OK)
+        except UserProfile.DoesNotExist:
             return Response({
                 "msg": "user with this id does not exists"
             }, status=status.HTTP_404_NOT_FOUND)
@@ -106,10 +108,7 @@ class ManagerCreateProfileView(APIView):
     def post(self, request):
         try:
             user_id = request.POST.get("user")
-            user = CustomUser.objects.get(id=user_id)
-            userprofile_role = user.role
-            print(userprofile_role)
-            if not userprofile_role == "E":
+            if not check_post_req_role(user_id):
                 return Response(
                     {"msg": "You Don't Have Permission For This Access"},
                     status=status.HTTP_401_UNAUTHORIZED
@@ -119,5 +118,5 @@ class ManagerCreateProfileView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             return Response({"msg": "Profile created successfully"})
-        except:
+        except Exception:
             return Response({"msg": "Incorrect data"}, status=status.HTTP_400_BAD_REQUEST)
